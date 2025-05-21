@@ -60,7 +60,7 @@ void execute_piping(char *cmdline){
 
         if (j != 0){ //not first command
             dup2(prev_pipe[0],STDIN_FILENO);
-            close(prev_pipe[1]);
+            close(prev_pipe[1]);                               
             close(prev_pipe[0]);
         }
 
@@ -97,6 +97,12 @@ void execute_piping(char *cmdline){
 
 }
 
+void execute_redirection(char *cmdline){
+
+    
+
+}
+
 int main()
 {
 	char	*cmdline, *prompt, **arglist;
@@ -107,6 +113,12 @@ int main()
 	setup();
 
 	while ( (cmdline = next_cmd(prompt, stdin)) != NULL ){
+
+        if (strchr(cmdline, '<') != NULL || (strchr(cmdline, '>'))!= NULL){ 
+            
+            execute_redirection(cmdline);
+
+        }
 
         //if there are no pipes in the command line it goes to original function
         if ( (strchr(cmdline, '|'))!= NULL){ 
