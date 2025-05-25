@@ -12,6 +12,8 @@
 #include 	<glob.h>
 #include 	<ctype.h>
 
+char *newstr(char *s, int l);
+
 char * next_cmd(char *prompt, FILE *fp)
 /*
  * purpose: read next command line from fp
