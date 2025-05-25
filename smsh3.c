@@ -12,6 +12,7 @@
 #include    <sys/wait.h>
 #include	"smsh.h"
 #include    <string.h>
+#include <fcntl.h>
 
 #define	DFL_PROMPT	"> "
 
@@ -99,8 +100,54 @@ void execute_piping(char *cmdline){
 
 void execute_redirection(char *cmdline){
 
-    
+    char *fileIn = NULL;
+    char *fileOut = NULL;
 
+    char *cmd = strdup(cmdline);
+    
+    //for output
+    char *output = strchr(cmd,'>');
+    if (output != NULL){
+        *output = '\0';
+        output++; //get point after >
+        fileOut = strtok(output, "\t\n");
+    }
+
+    //for input
+    char *input = strchr(cmd,'>');
+    if (input != NULL){
+        *input = '\0';
+        input++; //get point after >
+        fileIn = strtok(input, "\t\n");
+    }
+
+    char **command_args = splitline(cmd);
+
+    pid_t pid = fork();
+
+    //child
+    if (pid == 0){
+        //output
+        if (fileOut != NULL){
+            int fd = open(fileOut, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            dup2(fd, STDOUT_FILENO);
+            close(fd); //close file descriptor
+        }
+
+        //input 
+        if (fileIn != NULL){
+            int fd = open(fileIn, O_RDONLY);
+
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
+
+        execvp(command_args[0], command_args);
+    }else{
+        waitpid(pid, NULL, 0);
+    }
+
+    free(cmd);
 }
 
 int main()
