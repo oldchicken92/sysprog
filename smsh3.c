@@ -114,7 +114,7 @@ void execute_redirection(char *cmdline){
     }
 
     //for input
-    char *input = strchr(cmd,'>');
+    char *input = strchr(cmd,'<');
     if (input != NULL){
         *input = '\0';
         input++; //get point after >
@@ -165,10 +165,7 @@ int main()
             
             execute_redirection(cmdline);
 
-        }
-
-        //if there are no pipes in the command line it goes to original function
-        if ( (strchr(cmdline, '|'))!= NULL){ 
+        }else if( (strchr(cmdline, '|'))!= NULL) { //if there are no pipes in the command line it goes to original function
 
             execute_piping(cmdline);
 
