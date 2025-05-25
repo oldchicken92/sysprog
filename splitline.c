@@ -9,6 +9,8 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	"smsh.h"
+#include 	<glob.h>
+#include 	<ctype.h>
 
 char * next_cmd(char *prompt, FILE *fp)
 /*
@@ -98,11 +100,33 @@ char ** splitline(char *line)
 		len   = 1;
 		while (*++cp != '\0' && !(is_delim(*cp)) )
 			len++;
-		args[argnum++] = newstr(start, len);
-	}
+		char* token = newstr(start, len);
+
+		 glob_t glob_results;
+        int glob_flags = 0;
+
+		if (strpbrk(token, "*?[]") != NULL && glob(token, glob_flags, NULL, &glob_results) == 0) {
+            // Expand all glob matches
+            for (size_t i = 0; i < glob_results.gl_pathc; i++) {
+                if (argnum + 1 >= spots) {
+                    args = erealloc(args, bufspace + BUFSIZ);
+                    bufspace += BUFSIZ;
+                    spots += (BUFSIZ / sizeof(char *));
+                }
+                args[argnum++] = strdup(glob_results.gl_pathv[i]);
+            }
+            globfree(&glob_results);
+            free(token);
+        } else {
+            args[argnum++] = token;
+        }
+    }
+
 	args[argnum] = NULL;
 	return args;
-}
+
+	}
+	
 
 /*
  * purpose: constructor for strings
