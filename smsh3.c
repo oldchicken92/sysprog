@@ -137,34 +137,69 @@ void execute_redirection(char *cmdline){
             token = strtok(NULL, delimeters);
         }
 
+    int prev_pipe[2];
 
-    char **command_args = splitline(cmd);
+    for (int i = 0; i < cmd_num; i++){
+    int new_pipe[2];
+
+    pipe(new_pipe);
+
+    char **command_args = splitline(args[i]);
 
     pid_t pid = fork();
 
     //child
     if (pid == 0){
-        //output
-        if (fileOut != NULL){
-            int fd = open(fileOut, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            dup2(fd, STDOUT_FILENO);
-            close(fd); //close file descriptor
-        }
 
-        //input 
-        if (fileIn != NULL){
-            int fd = open(fileIn, O_RDONLY);
 
-            dup2(fd, STDIN_FILENO);
-            close(fd);
-        }
-
-        execvp(command_args[0], command_args);
-    }else{
-        waitpid(pid, NULL, 0);
+    //output, last command
+    if (i == cmd_num - 1 && fileOut != NULL) {
+        int fd = open(fileOut, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        dup2(fd, STDOUT_FILENO);
+        close(fd);
     }
 
+    //input, first command
+     if (i == 0 && fileIn != NULL) {
+        int fd = open(fileIn, O_RDONLY);
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+    }
+
+    if (i != 0){ //not first command
+        dup2(prev_pipe[0],STDIN_FILENO);
+        close(prev_pipe[1]);                               
+        close(prev_pipe[0]);
+    }
+
+    if (i != cmd_num - 1){ //if not final command
+        dup2(new_pipe[1], STDOUT_FILENO);
+        close(new_pipe[1]);
+        close(new_pipe[0]);
+    }
+
+    execvp(command_args[0], command_args);
+
+    }else{
+    if (i != 0){
+        close(prev_pipe[0]);
+        close(prev_pipe[1]);
+    }
+
+    if (i != cmd_num - 1){
+        prev_pipe[0] = new_pipe[0];
+        prev_pipe[1] = new_pipe[1];
+    }
+
+        
+    } 
+
+    waitpid(pid, NULL, 0);
+
+    } //end list commands
+
     free(cmd);
+    
 }
 
 int main()
