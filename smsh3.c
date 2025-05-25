@@ -121,6 +121,23 @@ void execute_redirection(char *cmdline){
         fileIn = strtok(input, "\t\n");
     }
 
+    //handling piping
+    char *args[20];
+    int cmd_num = 0;
+
+    char delimeters[] = "|";
+    char *token; 
+    token = strtok(cmd, delimeters);
+
+    int i = 0; //incrementer
+        while (token != NULL && i < 20){
+            args[i] = token;
+            i++;
+            cmd_num++;
+            token = strtok(NULL, delimeters);
+        }
+
+
     char **command_args = splitline(cmd);
 
     pid_t pid = fork();
