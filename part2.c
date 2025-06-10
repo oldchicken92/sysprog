@@ -5,18 +5,49 @@
 
 // How nice of me to include a global that tells you how many commands there were :)
 int total_commands = 0;
+pthread_mutex_t lock; 
+pthread_cond_t cond_writer; 
+pthread_cond_t cond_reader;
 
 
 // ####################################################################################
 // ## Please write some code in the following two functions
 
 void * writer(void * in_ptr)
-{
+{	
+	char**cmds = (char **)in_ptr;
+	for (int i = 0; i < total_commands; i++){
+		//lock pthread for writing
+		pthread_mutex_lock(&lock);
+		while(get_written() == 1){
+			pthread_cond_wait(&cond_writer, &lock);
+		}
+
+		bad_write(cmds[i]);
+		pthread_cond_signal(&cond_reader); //signal the reader
+		//unlock for reader
+		pthread_mutex_unlock(&lock);
+
+	}
+	return NULL; 
+
 	//must include bad_write;
 }
 
 void * reader(void * empty)
 {
+	for (int j = 0; j < total_commands; j++){
+		pthread_mutex_lock(&lock);
+		while (get_written() == 0){
+			pthread_cond_wait(&cond_reader, &lock); //wait for writer
+		}
+
+		bad_read(NULL);
+		pthread_cond_signal(&cond_writer);
+		pthread_mutex_unlock(&lock);
+	}
+	return NULL; 
+
 	//must include bad_read
 }
 
